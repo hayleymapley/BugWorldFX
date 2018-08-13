@@ -13,7 +13,7 @@ public class Plant extends WorldObject {
 	public int eatFrom() {
 		if (radius >= 1) {
 			radius--;
-			return 10; // returns 10 food for every point subtracted from radiu
+			return 100; // returns 10 food for every point subtracted from radiu
 		}
 		return 0;
 	}

@@ -33,8 +33,11 @@ import javafx.scene.shape.Shape;
 // solution: declare Bounds (property used by update()) inside KeyFrame handler
 
 //issue: plants spawn inside each other and bugs move through each other and plants
+//solved: added collision checking methods using pythagoras
 
-//issue: plants can sometimes continue to be eaten when the bug is out of range
+//issue: bugs can still spawn inside of plants
+
+//issue: plants can sometimes continue to be eaten when the bug appears out of range (because of circle)
 //
 //issue: white circles behind bug objects
 
@@ -42,6 +45,7 @@ import javafx.scene.shape.Shape;
 //TODO: allow user input for number of bugs/plants
 //TODO: fix collision
 //TODO: Comment and tidy up code
+//TODO: Add dropshadow
 
 public class BugWorldSimulator extends Application {
 
@@ -133,7 +137,7 @@ public class BugWorldSimulator extends Application {
 			public void handle(final ActionEvent t) {
 				for (Bug b : bugs) {
 					final Bounds bounds = pane.getBoundsInLocal();
-					b.update(bounds, bugs, plants);
+					b.update(bounds, bugs, plants, allObjects);
 				}
 				for (Plant p : plants) {
 					p.update();
@@ -189,7 +193,13 @@ public class BugWorldSimulator extends Application {
 
 	public void addBugs(int num, ImagePattern bugPattern) {
 		for (int i=0; i<num; i++) {
-			Bug bug = new Bug(getRandomX(), getRandomY(), 10);
+			double x = getRandomX();
+			double y = getRandomY();
+			Bug bug = new Bug(x, y, 10);
+			while (bug.checkCollision(x, y, allObjects)) {
+				x = getRandomX();
+				y = getRandomY();
+			}
 			bug.setFill(bugPattern);
 			bugs.add(bug);
 			allObjects.add(bug);
@@ -222,7 +232,7 @@ public class BugWorldSimulator extends Application {
 
 	public double getRandomY() {
 		double min = 10;
-		double max = 235;
+		double max = 220;
 		double range = (max - min);
 		return (Math.random() * range) + min; 
 	}

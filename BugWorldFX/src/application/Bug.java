@@ -6,6 +6,7 @@ import javafx.geometry.Bounds;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
+import javafx.scene.shape.Shape;
 
 // 1/10 chance of bug randomly changing direction each time
 //double chance = Math.ceil(Math.random()*10);
@@ -65,7 +66,8 @@ public class Bug extends WorldObject {
 		int range = max-min;
 		this.energy = (int)(Math.random() * range) + min;
 	}
-	
+
+	// Check if the current bug is next to a plant, and if so, return that plant
 	public Plant checkPlantCollision(ArrayList<Plant> plants) {
 		for (Plant p : plants) {
 			if (this.getBoundsInParent().intersects(p.getBoundsInParent())) {
@@ -74,19 +76,43 @@ public class Bug extends WorldObject {
 		}
 		return null;
 	}
-	
-	public boolean checkBugCollision(ArrayList<Bug> bugs) {
-		boolean collision = false;
-		for (Bug b : bugs) {
-			if (b != this && this.getBoundsInParent().intersects(b.getBoundsInParent())) {
-				collision = true;
+
+	//	public boolean checkCollision(ArrayList<WorldObject> allObjects) {
+	//		boolean collisionDetected = false;
+	//		for (WorldObject w : allObjects) {
+	//			if (w != this) {
+	//				Shape intersect = Shape.intersect(this, w);
+	//				if (intersect.getBoundsInLocal().getWidth() != -1) {
+	//					collisionDetected = true;
+	//				}
+	//			}
+	//		}
+	//		return collisionDetected;
+	//	}
+
+	public boolean checkCollision(double potentialX, double potentialY, ArrayList<WorldObject> allObjects) {
+		for (WorldObject w : allObjects) {
+			if (w != this) {
+				if (this.calculateCollision(potentialX, potentialY, w)) {
+					return true;
+				}
 			}
 		}
-		return collision;
+
+		return false;
 	}
 
-	public void update(Bounds bounds, ArrayList<Bug> bugs, ArrayList<Plant> plants) {
-		//		Energy handler
+	public boolean calculateCollision(double potentialX, double potentialY, WorldObject w) {
+		//inspired by Oliver
+		double diffX = w.getLayoutX() - potentialX;
+		double diffY = w.getLayoutY() - potentialY;
+		double distance = Math.sqrt((diffX*diffX)+(diffY*diffY));
+		double minDistance = w.getRadius() + this.getRadius();
+		return (distance < minDistance);
+	}
+
+	public void update(Bounds bounds, ArrayList<Bug> bugs, ArrayList<Plant> plants, ArrayList<WorldObject> allObjects) {
+		//		Energy + death
 		energy--;
 		if (energy == 0) {
 			dead = true;
@@ -95,24 +121,16 @@ public class Bug extends WorldObject {
 			this.setFill(deadPattern);
 		}
 
+		//		Movement
 		if (!dead) {
-			//			Eating from plants
-			Plant p = this.checkPlantCollision(plants);
-			if (p != null && p.getRadius() > 0 && energy < 500) {
-				dX = 0;
-				dY = 0;
-				energy += p.eatFrom();
-			}
-			// 			Colliding with objects
-			if (this.checkBugCollision(bugs)) {
-				dX *= -1;
-				dY *= -1;
-				this.setRandomDirection();
+
+			if (checkCollision(this.getLayoutX() + dX, this.getLayoutY() + dY, allObjects)) {
+				//nothing
+			} else {
+				this.setLayoutX(this.getLayoutX() + dX);
+				this.setLayoutY(this.getLayoutY() + dY);
 			}
 			//			inspiration: https://stackoverflow.com/questions/20022889/how-to-make-the-ball-bounce-off-the-walls-in-javafx
-			this.setLayoutX(this.getLayoutX() + dX);
-			this.setLayoutY(this.getLayoutY() + dY);
-
 			final boolean atRightBorder = this.getLayoutX() >= (bounds.getMaxX() - this.getRadius());
 			final boolean atLeftBorder = this.getLayoutX() <= (bounds.getMinX() + this.getRadius());
 			final boolean atBottomBorder = this.getLayoutY() >= (bounds.getMaxY() - this.getRadius());
@@ -123,6 +141,24 @@ public class Bug extends WorldObject {
 			if (atBottomBorder || atTopBorder) {
 				dY *= -1;
 			}
+
+			//			Eating from plants
+			Plant p = this.checkPlantCollision(plants);
+			if (p != null && p.getRadius() > 0 && energy < 500) {
+				dX = 0;
+				dY = 0;
+				energy += p.eatFrom();
+			}
+			// 			Colliding with objects
+			//			if (this.checkCollision(allObjects)) {
+			////				dX *= -1;
+			////				dY *= -1;
+			////				this.setRandomDirection();
+			////				this.setLayoutX(this.getLayoutX() - dX);
+			////				this.setLayoutY(this.getLayoutY() - dY);
+			//				
+			//			}
+
 
 			// chance of change in direction and speed (distance moved)
 			int directionChance = (int)Math.ceil(Math.random()*15);
@@ -140,6 +176,7 @@ public class Bug extends WorldObject {
 					dY = dY + 0.5;
 				}
 			}
+
 		}
 	}
 
