@@ -11,106 +11,52 @@ public class Bug extends WorldObject {
 
 	private double dX = -1.5f;
 	private double dY = -1.5f;
-	protected int energy = 1000;
-	private boolean dead = false;
+	private int energy = 1000;
+	private boolean isHungry = false;
+	private boolean isDead = false;
 
 	public Bug(double radius) {
 		super(radius);
 		this.randomiseDirection();
-		//
-		//		int min = 750;
-		//		int max = 1000;
-		//		int range = max-min;
-		//		this.energy = (int)(Math.random() * range) + min;
-	}
-
-	// Check if the current bug is next to a plant, and if so, return that plant
-	//	public Plant checkPlantCollision(ArrayList<Plant> plants) {
-	//		for (Plant p : plants) {
-	//			if (this.getBoundsInParent().intersects(p.getBoundsInParent())) {
-	//				System.out.println("plant collision");
-	//				System.out.println("---------------");
-	//				return p;
-	//				
-	//			}
-	//		}
-	//		return null;
-	//	}
-
-	//		public Plant checkCollision(ArrayList<Plant> plants) {
-	////			boolean collisionDetected = false;
-	//			for (WorldObject w : plants) {
-	//				if (w != this) {
-	//					Shape intersect = Shape.intersect(this, w);
-	//					if (intersect.getBoundsInLocal().getWidth() != -1) {
-	////						collisionDetected = true;
-	//						return (Plant) w;
-	//					}
-	//				}
-	//			}
-	//			return null;
-	//		}
-
-	public Plant collisionWithPlantDetected(double potentialX, double potentialY, ArrayList<Plant> plants) {
-		for (Plant w : plants) {
-			if (this.calculatePlantCollision(potentialX, potentialY, w) && w instanceof Plant) {
-				return w;
-			}
-		}
-		return null;
 	}
 	
-	public boolean calculatePlantCollision(double potentialX, double potentialY, WorldObject w) {
-		//inspired by Oliver
-		double diffX = w.getLayoutX() - potentialX;
-		double diffY = w.getLayoutY() - potentialY;
-		double distance = Math.sqrt((diffX*diffX)+(diffY*diffY));
-		double minDistance = w.getRadius() + this.getRadius() + 3;
-		return (distance < minDistance);
-	}
-
-	public boolean collisionDetected(double potentialX, double potentialY, ArrayList<WorldObject> allObjects) {
-		for (WorldObject w : allObjects) {
-			if (w != this) {
-				if (this.calculateCollision(potentialX, potentialY, w)) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	//Used by checkCollision method
-	public boolean calculateCollision(double potentialX, double potentialY, WorldObject w) {
-		//inspired by Oliver
-		double diffX = w.getLayoutX() - potentialX;
-		double diffY = w.getLayoutY() - potentialY;
-		double distance = Math.sqrt((diffX*diffX)+(diffY*diffY));
-		double minDistance = w.getRadius() + this.getRadius();
-		return (distance < minDistance);
-	}
-
 	public void update(Bounds bounds, ArrayList<Bug> bugs, ArrayList<Plant> plants, ArrayList<WorldObject> allObjects) {
 		//Energy + death
+		this.updateEnergy();
+
+		//Movement
+		this.move(bounds, allObjects);
+
+		//Eating from plants
+		this.eat(plants);	
+		
+		// randomise direction (chance of changing direction and distance moved)
+		this.randomiseDirection();
+		}
+	
+
+	public void updateEnergy() {
 		energy--;
+		if (energy < 600) {
+			isHungry = true;
+		}
 		if (energy == 0) {
-			dead = true;
+			isDead = true;
 			Image dead = new Image("/gravestone1.png");
 			ImagePattern deadPattern = new ImagePattern(dead);
 			this.setFill(deadPattern);
-		}
-		if (energy < 0) {
+		}else if (energy < 0) {
 			energy = 0;
 		}
-
-		//Movement
-		if (!dead) {
+	}
+	
+	public void move(Bounds bounds, ArrayList<WorldObject> allObjects) {
+		if (!isDead) {
 			if (!collisionDetected(this.getLayoutX() + dX, this.getLayoutY() + dY, allObjects)) {
 				//move
 				this.setLayoutX(this.getLayoutX() + dX);
 				this.setLayoutY(this.getLayoutY() + dY);
 			}
-
 			//Border collision logic
 			//inspiration: https://stackoverflow.com/questions/20022889/how-to-make-the-ball-bounce-off-the-walls-in-javafx
 			final boolean atRightBorder = this.getLayoutX() >= (bounds.getMaxX() - this.getRadius());
@@ -123,21 +69,20 @@ public class Bug extends WorldObject {
 			if (atBottomBorder || atTopBorder) {
 				dY *= -1;
 			}
-
-			//Eating from plants
-			Plant p = this.collisionWithPlantDetected(this.getLayoutX(), this.getLayoutY(), plants);
-			if (p != null && p.getRadius() > 0 && energy < 800) {
-				dX = 0;
-				dY = 0;
-				energy += p.eatFrom();
-			}
-
-			// chance of change in direction and speed (distance moved)
-			this.randomiseDirection();
-//			p = null;
 		}
 	}
 
+	public void eat(ArrayList<Plant> plants) {
+		Plant p = collisionWithPlantDetected(getLayoutX(), getLayoutY(), plants);
+		if (p != null && p.getRadius() > 0 && isHungry) {
+			dX = 0;
+			dY = 0;
+			energy += p.eatFrom();
+		}
+		// set Plant p to null so that the bugs don't continue to eat from it
+		p = null;
+	}
+	
 	public void randomiseDirection() {
 		int directionChance = (int)Math.ceil(Math.random()*15);
 		if (directionChance == 1) {
@@ -150,17 +95,59 @@ public class Bug extends WorldObject {
 				this.dY = -dY;
 			}
 		}
-		int speedChance = (int)Math.ceil(Math.random()*10);
-		if (speedChance == 1) {
-			int speed = (int)Math.ceil(Math.random()*2); //1=slower 2=faster
-			if (speed == 1 && dX > -3 && dY > -3) {
+		int distanceChance = (int)Math.ceil(Math.random()*10);
+		if (distanceChance == 1) {
+			int distance = (int)Math.ceil(Math.random()*2); //1=slower 2=faster
+			if (distance == 1 && dX > -3 && dY > -3) {
 				dX = dX - 0.5;
 				dY = dY - 0.5;
-			} else if (speed == 2 && dX < 3 && dY < 3) {
+			} else if (distance == 2 && dX < 3 && dY < 3) {
 				dX = dX + 0.5;
 				dY = dY + 0.5;
 			}
 		}
+	}
+	
+	//Check for collision with plants
+	public Plant collisionWithPlantDetected(double potentialX, double potentialY, ArrayList<Plant> plants) {
+		for (Plant w : plants) {
+			if (calculatePlantCollision(potentialX, potentialY, w) && w instanceof Plant) {
+				return w;
+			}
+		}
+		return null;
+	}
+	
+	//Used by collisionWithPlantDetected
+	public boolean calculatePlantCollision(double potentialX, double potentialY, WorldObject w) {
+		//inspired by Oliver
+		double diffX = w.getLayoutX() - potentialX;
+		double diffY = w.getLayoutY() - potentialY;
+		double distance = Math.sqrt((diffX*diffX)+(diffY*diffY));
+		double minDistance = w.getRadius() + getRadius() + 3;
+		return (distance < minDistance);
+	}
+
+	//Check for collision
+	public boolean collisionDetected(double potentialX, double potentialY, ArrayList<WorldObject> allObjects) {
+		for (WorldObject w : allObjects) {
+			if (w != this) {
+				if (calculateCollision(potentialX, potentialY, w)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	//Used by collisionDetected method
+	public boolean calculateCollision(double potentialX, double potentialY, WorldObject w) {
+		//inspired by Oliver
+		double diffX = w.getLayoutX() - potentialX;
+		double diffY = w.getLayoutY() - potentialY;
+		double distance = Math.sqrt((diffX*diffX)+(diffY*diffY));
+		double minDistance = w.getRadius() + getRadius();
+		return (distance < minDistance);
 	}
 
 	//ACCESSORS

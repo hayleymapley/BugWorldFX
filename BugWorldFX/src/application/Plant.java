@@ -26,16 +26,17 @@ public class Plant extends WorldObject {
 			this.setVisible(false);
 		}
 		// Chance of growth
-		int chance = (int)(Math.ceil(Math.random()*100));
-		if (chance == 1 && !checkCollision(allObjects)) {
+		int chance = (int)(Math.ceil(Math.random()*70));
+		if (chance == 1 && !checkCollision(allObjects)) { //Stops the plant from growing if it is surrounded by an object
 			radius = radius + 0.5;
 		}
-		if (radius > 30) {
+		if (radius > 30) { //Stop growth at 30
 			radius = 30;
 		}
 		this.setRadius(radius);
 	}
 
+	//Used to check collision with other objects
 	public boolean checkCollision(ArrayList<WorldObject> allObjects) {
 		boolean collisionDetected = false;
 		for (WorldObject w : allObjects) {

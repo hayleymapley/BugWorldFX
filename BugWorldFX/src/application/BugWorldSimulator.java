@@ -40,111 +40,79 @@ import javafx.scene.text.TextAlignment;
 //issue: plants spawn inside each other and bugs move through each other and plants
 //solution: added collision checking methods using pythagoras
 
-//issue: bugs can still spawn inside of plants
-
 //issue: plants can sometimes continue to be eaten when the bug appears out of range (because of circle)
 //
 //issue: white circles behind bug objects
 //solution: use .png file
 
-//TODO: add obstacles
-//TODO: Comment and tidy up code
-
 public class BugWorldSimulator extends Application {
 
+	// Panes
 	private BorderPane canvas = new BorderPane();
-	Pane worldPane = new Pane();
-	private static final int defaultWidth = 600;
-	private static final int defaultHeight = 500;
+	private Pane worldPane = new Pane();
+	private HBox controls = new HBox();
 
+	private static final int DEFAULT_WIDTH = 600;
+	private static final int DEFAULT_HEIGHT = 500;
+
+	// Used to pass information to bugs/plants
 	private ArrayList<Bug> bugs = new ArrayList<>();
 	private ArrayList<Plant> plants = new ArrayList<>();
 	private ArrayList<WorldObject> allObjects = new ArrayList<>();
 
+	// Start-up defaults
 	private int currentNumBugs = 0;
 	private int currentNumPlants = 0;
 	private int currentNumObstacles = 3;
 
-	//	Load bug and plant images
+	//	Load world object images
 	private Image bug = new Image("/beetlecartoon.png");
 	private ImagePattern bugPattern = new ImagePattern(bug);
-
 	private Image plant = new Image("/bush.png");
 	private ImagePattern plantPattern = new ImagePattern(plant);
-	
 	private Image obstacle = new Image("/obstacle.png");
 	private ImagePattern obstaclePattern = new ImagePattern(obstacle); 
+	
+	private BackgroundImage geometric = new BackgroundImage(new Image("/menurotate.jpg"),
+			BackgroundRepeat.REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT,
+			BackgroundSize.DEFAULT);
+	private BackgroundImage grass = new BackgroundImage(new Image("/grasstexture.jpg"),
+			BackgroundRepeat.REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT,
+			BackgroundSize.DEFAULT);
+
+	//Load button images
+	private Image imgPlayPause = new Image("/play-pause.png");		//Play/pause button images (has three states)
+	private ImageView playPauseView = new ImageView(imgPlayPause);
+	private Image imgPlay = new Image("/play.png");
+	private ImageView playView = new ImageView(imgPlay);
+	private Image imgPause = new Image("/pause.png");
+	private ImageView pauseView = new ImageView(imgPause);
+	private Image imgQuit = new Image(getClass().getResourceAsStream("exit (1).png")); // Quit button image
+	private ImageView quitView = new ImageView(imgQuit);
+	private Image imgReset = new Image("/reset3.png");		// Reset button image
+	private ImageView resetView = new ImageView(imgReset);
+	
+	// Create buttons
+	private Button play = new Button("");
+	private Button quit = new Button("");
+	private Button reset = new Button("");
+	private Button generate = new Button("Generate world");
+	
+	//Create layout elements
+	private VBox menuPane = new VBox();
+	private Slider bugSlider = new Slider();
+	private Label numBugs = new Label("\nNumber of bugs: " + (int)bugSlider.getValue());
+	private Slider plantSlider = new Slider();
+	private Label numPlants = new Label("\nNumber of plants: " + (int)plantSlider.getValue());
 
 	@Override
 	public void start(final Stage primaryStage) {
 
-		// Create controls
-		HBox controls = new HBox();
-		controls.setPadding(new Insets(25,25,25,25));
-		controls.setSpacing(5);
+		setControlButtonAttributes();
+		initialiseMenuPane();
+		setWorldPaneBackground();
 
-		// Add Play/Pause button		
-		Image imgPlayPause = new Image("/play-pause.png");
-		ImageView playPauseView = new ImageView(imgPlayPause);
-		playPauseView.setFitWidth(20);
-		playPauseView.setFitHeight(20);
-		Image imgPlay = new Image("/play.png");
-		ImageView playView = new ImageView(imgPlay);
-		playView.setFitWidth(20);
-		playView.setFitHeight(20);
-		Image imgPause = new Image("/pause.png");
-		ImageView pauseView = new ImageView(imgPause);
-		pauseView.setFitWidth(20);
-		pauseView.setFitHeight(20);
-		Button play = new Button("");
-		play.setStyle("-fx-background-color: #ffffff; -fx-border-color: #000000");
-		play.setGraphic(playPauseView);
-
-		// Add Quit button
-		Image imgQuit = new Image(getClass().getResourceAsStream("exit (1).png"));
-		ImageView quitView = new ImageView(imgQuit);
-		quitView.setFitWidth(20);
-		quitView.setFitHeight(20);
-		Button quit = new Button("");
-		quit.setStyle("-fx-background-color: #ffffff;-fx-border-color: #000000");
-		quit.setGraphic(quitView);
-
-		// Add reset button
-		Image imgReset = new Image("/reset3.png");
-		ImageView resetView = new ImageView(imgReset);
-		resetView.setFitWidth(20);
-		resetView.setFitHeight(20);
-		Button reset = new Button("");
-		reset.setStyle("-fx-background-color: #ffffff;-fx-border-color: #000000");
-		reset.setGraphic(resetView);
-
-		// Add buttons to controls panel
-		controls.getChildren().addAll(play, reset, quit);
-
-		// Add world pane attributes
-		BackgroundImage grass = new BackgroundImage(new Image("/grasstexture.jpg"),
-				BackgroundRepeat.REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT,
-				BackgroundSize.DEFAULT);
-		worldPane.setBackground(new Background(grass));
-
-		//Add title
-		Text title = new Text("BUG WORLD\n");
-		title.setFont(Font.font(30));
-		title.setFill(Color.WHITE);
-		title.setTextAlignment(TextAlignment.CENTER);
-
-		//Add slider for bug input
-		Slider bugSlider = new Slider();
-		bugSlider.setMin(0);
-		bugSlider.setMax(15);
-		bugSlider.setValue(0);
-		bugSlider.setShowTickLabels(true);
-		bugSlider.setShowTickMarks(true);
-		bugSlider.setMajorTickUnit(5);
-		bugSlider.setMinorTickCount(1);
-		bugSlider.setBlockIncrement(1);
-		Label numBugs = new Label("\nNumber of bugs: " + (int)bugSlider.getValue());
-		numBugs.setTextFill(Color.WHITE);
+		// Listener for bugs slider
 		bugSlider.valueProperty().addListener(new ChangeListener<Number>() {
 			@Override
 			public void changed(ObservableValue<? extends Number> ov, Number oldValue, Number newValue) {
@@ -153,18 +121,7 @@ public class BugWorldSimulator extends Application {
 			}
 		});
 
-		//Add slider for plant input
-		Slider plantSlider = new Slider();
-		plantSlider.setMin(0);
-		plantSlider.setMax(15);
-		plantSlider.setValue(0);
-		plantSlider.setShowTickLabels(true);
-		plantSlider.setShowTickMarks(true);
-		plantSlider.setMajorTickUnit(5);
-		plantSlider.setMinorTickCount(1);
-		plantSlider.setBlockIncrement(1);
-		Label numPlants = new Label("\nNumber of plants: " + (int)plantSlider.getValue());
-		numPlants.setTextFill(Color.WHITE);
+		// Listener for plants slider
 		plantSlider.valueProperty().addListener(new ChangeListener<Number>() {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
@@ -173,9 +130,7 @@ public class BugWorldSimulator extends Application {
 			}
 		});
 
-		//Add generate world button
-		Button generate = new Button("Generate world");
-		generate.setStyle("-fx-background-color: #ffffff;-fx-border-color: #000000");
+		// Handler for generate button
 		generate.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
@@ -186,26 +141,14 @@ public class BugWorldSimulator extends Application {
 			}
 		});
 
-		//Add menu pane
-		VBox menu = new VBox();
-		menu.setPrefSize(defaultWidth/2, defaultHeight);
-		menu.setPadding(new Insets(25, 25, 25, 25));
-		BackgroundImage geometric = new BackgroundImage(new Image("/menurotate.jpg"),
-				BackgroundRepeat.REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT,
-				BackgroundSize.DEFAULT);
-		menu.setBackground(new Background(geometric));
-		menu.getChildren().addAll(title, numBugs, bugSlider, numPlants, plantSlider, generate, controls);
-		menu.setAlignment(Pos.CENTER);
-		menu.setSpacing(10);
-
-		//Set canvas properties and align controls and worldPane
+		// Set BorderPane properties and align menuPane and worldPane
 		canvas.setCenter(worldPane);
-		canvas.setLeft(menu);
+		canvas.setLeft(menuPane);
 
-		//Create scene
-		final Scene scene = new Scene(canvas, defaultWidth+(defaultWidth/3), defaultHeight);
+		// Create scene
+		final Scene scene = new Scene(canvas, DEFAULT_WIDTH+(DEFAULT_WIDTH/3), DEFAULT_HEIGHT);
 
-		//Create frame and animation handler
+		// Create frame and animation handler
 		KeyFrame frame = new KeyFrame(Duration.millis(30), new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(final ActionEvent t) {
@@ -219,11 +162,11 @@ public class BugWorldSimulator extends Application {
 			}
 		});
 
-		//Create Timeline
+		// Create Timeline
 		final Timeline timeline = new Timeline(frame);
 		timeline.setCycleCount(javafx.animation.Animation.INDEFINITE);
 
-		//Set control buttons handlers
+		// Set control buttons handlers
 		controls.setAlignment(Pos.CENTER);
 		play.setOnAction(new EventHandler<ActionEvent>() {
 			int count = 0;
@@ -252,12 +195,93 @@ public class BugWorldSimulator extends Application {
 			}
 		});
 
-		//Configure Stage
+		// Configure Stage
 		primaryStage.setTitle("Bug World");
 		primaryStage.setScene(scene);
-		primaryStage.setMaxWidth(defaultWidth+(defaultWidth/3)+100);
-		primaryStage.setMaxHeight(defaultHeight+125);
+		primaryStage.setMaxWidth(DEFAULT_WIDTH+(DEFAULT_WIDTH/3)+100);
+		primaryStage.setMaxHeight(DEFAULT_HEIGHT+125);
 		primaryStage.show();
+	}
+
+	public void setControlButtonAttributes() {
+		// Play/pause button
+		// Set image widths and heights (play/pause button has three states/images)
+		playPauseView.setFitWidth(20);
+		playPauseView.setFitHeight(20);
+		playView.setFitWidth(20);
+		playView.setFitHeight(20);
+		pauseView.setFitWidth(20);
+		pauseView.setFitHeight(20);
+		// Set style and image of play button
+		play.setStyle("-fx-background-color: #ffffff; -fx-border-color: #000000");
+		play.setGraphic(playPauseView);
+
+		// Quit button
+		// Set image width, height
+		quitView.setFitWidth(20);
+		quitView.setFitHeight(20);
+		// Set style and image of quit button
+		quit.setStyle("-fx-background-color: #ffffff;-fx-border-color: #000000");
+		quit.setGraphic(quitView);
+
+		// Reset button
+		resetView.setFitWidth(20);
+		resetView.setFitHeight(20);
+		// Set style and image of reset button
+		reset.setStyle("-fx-background-color: #ffffff;-fx-border-color: #000000");
+		reset.setGraphic(resetView);
+	}
+
+	public void initialiseMenuPane() {
+		// Set controls panel attributes and add buttons
+		controls.setPadding(new Insets(25,25,25,25));
+		controls.setSpacing(5);
+		controls.getChildren().addAll(play, reset, quit);
+
+		// Add title
+		Text title = new Text("BUG WORLD\n");
+		title.setFont(Font.font(30));
+		title.setFill(Color.WHITE);
+		title.setTextAlignment(TextAlignment.CENTER);
+
+		// Set slider for bug input attributes
+		bugSlider.setMin(0);
+		bugSlider.setMax(15);
+		bugSlider.setValue(0);
+		bugSlider.setShowTickLabels(true);
+		bugSlider.setShowTickMarks(true);
+		bugSlider.setMajorTickUnit(5);
+		bugSlider.setMinorTickCount(1);
+		bugSlider.setBlockIncrement(1);
+		// Set label colour
+		numBugs.setTextFill(Color.WHITE);
+		
+		// Set slider for plant input attributes
+		plantSlider.setMin(0);
+		plantSlider.setMax(15);
+		plantSlider.setValue(0);
+		plantSlider.setShowTickLabels(true);
+		plantSlider.setShowTickMarks(true);
+		plantSlider.setMajorTickUnit(5);
+		plantSlider.setMinorTickCount(1);
+		plantSlider.setBlockIncrement(1);
+		// Set label colour
+		numPlants.setTextFill(Color.WHITE);
+
+		// Set style of generate button
+		generate.setStyle("-fx-background-color: #ffffff;-fx-border-color: #000000");
+		
+		// Set menuPane attributes
+		menuPane.setPrefSize(DEFAULT_WIDTH/2, DEFAULT_HEIGHT);
+		menuPane.setPadding(new Insets(25, 25, 25, 25));
+		menuPane.setBackground(new Background(geometric));
+		menuPane.getChildren().addAll(title, numBugs, bugSlider, numPlants, plantSlider, generate, controls);
+		menuPane.setAlignment(Pos.CENTER);
+		menuPane.setSpacing(10);
+	}
+
+	public void setWorldPaneBackground() {
+		worldPane.setBackground(new Background(grass));
 	}
 
 	//Reset worldPane and add bugs and plants according to fields
@@ -309,7 +333,7 @@ public class BugWorldSimulator extends Application {
 			allObjects.add(plant);
 		}
 	}
-	
+
 	//Add obstacles
 	public void addObstacles(int num, ImagePattern obstaclePattern) {
 		for (int i=0; i<num; i++) {
@@ -343,12 +367,12 @@ public class BugWorldSimulator extends Application {
 		switch (coord) {
 		case "x" :
 			min = 10; 
-			max = defaultWidth-(defaultWidth/4);
+			max = DEFAULT_WIDTH-(DEFAULT_WIDTH/4);
 			range = (max - min);
 			return (Math.random() * range) + min;
 		case "y" :
 			min = 10;
-			max = defaultHeight - 50;
+			max = DEFAULT_HEIGHT - 50;
 			range = (max - min);
 			return (Math.random() * range) + min; 
 		}
