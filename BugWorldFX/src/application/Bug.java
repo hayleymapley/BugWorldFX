@@ -13,47 +13,63 @@ public class Bug extends WorldObject {
 	private double dY = -1.5f;
 	protected int energy = 1000;
 	private boolean dead = false;
-	
-	private int count = 0; //debugging
 
 	public Bug(double radius) {
 		super(radius);
-		this.setRandomDirection();
-//
-//		int min = 750;
-//		int max = 1000;
-//		int range = max-min;
-//		this.energy = (int)(Math.random() * range) + min;
+		this.randomiseDirection();
+		//
+		//		int min = 750;
+		//		int max = 1000;
+		//		int range = max-min;
+		//		this.energy = (int)(Math.random() * range) + min;
 	}
 
 	// Check if the current bug is next to a plant, and if so, return that plant
-//	public Plant checkPlantCollision(ArrayList<Plant> plants) {
-//		for (Plant p : plants) {
-//			if (this.getBoundsInParent().intersects(p.getBoundsInParent())) {
-//				System.out.println("plant collision");
-//				System.out.println("---------------");
-//				return p;
-//				
-//			}
-//		}
-//		return null;
-//	}
+	//	public Plant checkPlantCollision(ArrayList<Plant> plants) {
+	//		for (Plant p : plants) {
+	//			if (this.getBoundsInParent().intersects(p.getBoundsInParent())) {
+	//				System.out.println("plant collision");
+	//				System.out.println("---------------");
+	//				return p;
+	//				
+	//			}
+	//		}
+	//		return null;
+	//	}
 
-//		public Plant checkCollision(ArrayList<Plant> plants) {
-////			boolean collisionDetected = false;
-//			for (WorldObject w : plants) {
-//				if (w != this) {
-//					Shape intersect = Shape.intersect(this, w);
-//					if (intersect.getBoundsInLocal().getWidth() != -1) {
-////						collisionDetected = true;
-//						return (Plant) w;
-//					}
-//				}
-//			}
-//			return null;
-//		}
+	//		public Plant checkCollision(ArrayList<Plant> plants) {
+	////			boolean collisionDetected = false;
+	//			for (WorldObject w : plants) {
+	//				if (w != this) {
+	//					Shape intersect = Shape.intersect(this, w);
+	//					if (intersect.getBoundsInLocal().getWidth() != -1) {
+	////						collisionDetected = true;
+	//						return (Plant) w;
+	//					}
+	//				}
+	//			}
+	//			return null;
+	//		}
 
-	public boolean checkCollision(double potentialX, double potentialY, ArrayList<WorldObject> allObjects) {
+	public Plant collisionWithPlantDetected(double potentialX, double potentialY, ArrayList<Plant> plants) {
+		for (Plant w : plants) {
+			if (this.calculatePlantCollision(potentialX, potentialY, w) && w instanceof Plant) {
+				return w;
+			}
+		}
+		return null;
+	}
+	
+	public boolean calculatePlantCollision(double potentialX, double potentialY, WorldObject w) {
+		//inspired by Oliver
+		double diffX = w.getLayoutX() - potentialX;
+		double diffY = w.getLayoutY() - potentialY;
+		double distance = Math.sqrt((diffX*diffX)+(diffY*diffY));
+		double minDistance = w.getRadius() + this.getRadius() + 3;
+		return (distance < minDistance);
+	}
+
+	public boolean collisionDetected(double potentialX, double potentialY, ArrayList<WorldObject> allObjects) {
 		for (WorldObject w : allObjects) {
 			if (w != this) {
 				if (this.calculateCollision(potentialX, potentialY, w)) {
@@ -75,7 +91,8 @@ public class Bug extends WorldObject {
 	}
 
 	public void update(Bounds bounds, ArrayList<Bug> bugs, ArrayList<Plant> plants, ArrayList<WorldObject> allObjects) {
-		//		Energy + death
+		this.setFill(Color.WHITE);
+		//Energy + death
 		energy--;
 		if (energy == 0) {
 			dead = true;
@@ -86,16 +103,21 @@ public class Bug extends WorldObject {
 		if (energy < 0) {
 			energy = 0;
 		}
-		
-		//		Movement
+		//debugging
+		if (energy%100 == 0) {
+			System.out.println(energy);
+		}
+
+		//Movement
 		if (!dead) {
-			if (checkCollision(this.getLayoutX() + dX, this.getLayoutY() + dY, allObjects)) {
-				//do nothing
-			} else {
+			if (!collisionDetected(this.getLayoutX() + dX, this.getLayoutY() + dY, allObjects)) {
+				//move
 				this.setLayoutX(this.getLayoutX() + dX);
 				this.setLayoutY(this.getLayoutY() + dY);
 			}
-			//			inspiration: https://stackoverflow.com/questions/20022889/how-to-make-the-ball-bounce-off-the-walls-in-javafx
+
+			//Border collision logic
+			//inspiration: https://stackoverflow.com/questions/20022889/how-to-make-the-ball-bounce-off-the-walls-in-javafx
 			final boolean atRightBorder = this.getLayoutX() >= (bounds.getMaxX() - this.getRadius());
 			final boolean atLeftBorder = this.getLayoutX() <= (bounds.getMinX() + this.getRadius());
 			final boolean atBottomBorder = this.getLayoutY() >= (bounds.getMaxY() - this.getRadius());
@@ -108,44 +130,44 @@ public class Bug extends WorldObject {
 			}
 
 			//Eating from plants
-//			Plant p = this.checkCollision(plants);
-//			if (p != null && p.getRadius() > 0 && energy < 500) {
+			Plant p = this.collisionWithPlantDetected(this.getLayoutX(), this.getLayoutY(), plants);
+			if (p != null && p.getRadius() > 0 && energy < 800) {
 //				dX = 0;
 //				dY = 0;
-//				energy += p.eatFrom();
-//				System.out.println("eat");
-//				count++;
-//				System.out.println(count);
-//			}
+				this.setFill(Color.RED);
+				energy += p.eatFrom();
+				System.out.println("eat");
+				System.out.println("---------");
+			}
 
 			// chance of change in direction and speed (distance moved)
-			int directionChance = (int)Math.ceil(Math.random()*15);
-			if (directionChance == 1) {
-				this.setRandomDirection();
-			}
-			int speedChance = (int)Math.ceil(Math.random()*10);
-			if (speedChance == 1) {
-				int speed = (int)Math.ceil(Math.random()*2); //1=slower 2=faster
-				if (speed == 1 && dX > -3 && dY > -3) {
-					dX = dX - 0.5;
-					dY = dY - 0.5;
-				} else if (speed == 2 && dX < 3 && dY < 3) {
-					dX = dX + 0.5;
-					dY = dY + 0.5;
-				}
-			}
-
+			this.randomiseDirection();
+			p = null;
 		}
 	}
 
-	public void setRandomDirection() {
-		double x = Math.ceil(Math.random()*2);
-		double y = Math.ceil(Math.random()*2);
-		if (x > 1) {
-			this.dX = -dX;
+	public void randomiseDirection() {
+		int directionChance = (int)Math.ceil(Math.random()*15);
+		if (directionChance == 1) {
+			double x = Math.ceil(Math.random()*2);
+			double y = Math.ceil(Math.random()*2);
+			if (x > 1) {
+				this.dX = -dX;
+			}
+			if (y > 1) {
+				this.dY = -dY;
+			}
 		}
-		if (y > 1) {
-			this.dY = -dY;
+		int speedChance = (int)Math.ceil(Math.random()*10);
+		if (speedChance == 1) {
+			int speed = (int)Math.ceil(Math.random()*2); //1=slower 2=faster
+			if (speed == 1 && dX > -3 && dY > -3) {
+				dX = dX - 0.5;
+				dY = dY - 0.5;
+			} else if (speed == 2 && dX < 3 && dY < 3) {
+				dX = dX + 0.5;
+				dY = dY + 0.5;
+			}
 		}
 	}
 
