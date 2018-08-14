@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
@@ -40,16 +42,16 @@ import javafx.scene.text.TextAlignment;
 // solution: declare Bounds (property used by update()) inside KeyFrame handler
 
 //issue: plants spawn inside each other and bugs move through each other and plants
-//solved: added collision checking methods using pythagoras
+//solution: added collision checking methods using pythagoras
 
 //issue: bugs can still spawn inside of plants
 
 //issue: plants can sometimes continue to be eaten when the bug appears out of range (because of circle)
 //
 //issue: white circles behind bug objects
+//solution: use .png file
 
 //TODO: move objects to groups
-//TODO: allow user input for number of bugs/plants
 //TODO: fix collision
 //TODO: Comment and tidy up code
 //TODO: Add dropshadow
@@ -57,26 +59,25 @@ import javafx.scene.text.TextAlignment;
 public class BugWorldSimulator extends Application {
 
 	private static BorderPane canvas;
+	Pane worldPane = new Pane();
 	private static int defaultWidth = 600;
 	private static int defaultHeight = 500;
 
 	private ArrayList<Bug> bugs = new ArrayList<>();
 	private ArrayList<Plant> plants = new ArrayList<>();
 	private ArrayList<WorldObject> allObjects = new ArrayList<>();
+	private int currentNumBugs = 0;
+	private int currentNumPlants = 0;
+
+	//	Load bug and plant images
+	Image bug = new Image("/beetlecartoon.png");
+	ImagePattern bugPattern = new ImagePattern(bug);
+
+	Image plant = new Image("/bush.png");
+	ImagePattern plantPattern = new ImagePattern(plant);
 
 	@Override
 	public void start(final Stage primaryStage) {
-		//	Load bug and plant images
-		Image bug = new Image("/beetlecartoon.png");
-		ImagePattern bugPattern = new ImagePattern(bug);
-
-		Image plant = new Image("/bush.png");
-		ImagePattern plantPattern = new ImagePattern(plant);
-
-		// Create 10 bug and plant objects
-		this.addBugs(10, bugPattern);
-		this.addPlants(10, plantPattern);
-
 		// Create controls
 		HBox controls = new HBox();
 		controls.setPadding(new Insets(25,25,25,25));
@@ -117,31 +118,80 @@ public class BugWorldSimulator extends Application {
 		controls.getChildren().addAll(play, reset, quit);
 
 		// Add bug pane
-		Pane pane = new Pane();
-		pane.getChildren().addAll(bugs);
-		pane.getChildren().addAll(plants);
+		worldPane.getChildren().addAll(bugs);
+		worldPane.getChildren().addAll(plants);
 		BackgroundImage grass = new BackgroundImage(new Image("/grasstexture.jpg"),
 				BackgroundRepeat.REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT,
 				BackgroundSize.DEFAULT);
-		pane.setBackground(new Background(grass));
+		worldPane.setBackground(new Background(grass));
 
 		//Add menu pane
 		VBox menu = new VBox();
 		menu.setStyle("-fx-background-color: #99ffcc");
 		menu.setPrefSize(defaultWidth/2, defaultHeight);
-		Text title = new Text("BUG WORLD");
+		menu.setPadding(new Insets(25, 25, 25, 25));
+
+		Text title = new Text("BUG WORLD\n");
 		title.setFont(Font.font(30));
 		title.setTextAlignment(TextAlignment.CENTER);
-		Label numBugs = new Label("Number of bugs");
-		Slider slider = new Slider();
-		slider.setMin(0);
-		slider.setMax(50);
-		menu.getChildren().addAll(title, numBugs, controls);
+
+		Slider bugSlider = new Slider();
+		bugSlider.setMin(0);
+		bugSlider.setMax(30);
+		bugSlider.setValue(0);
+		bugSlider.setShowTickLabels(true);
+		bugSlider.setShowTickMarks(true);
+		bugSlider.setMajorTickUnit(10);
+		bugSlider.setMinorTickCount(1);
+		bugSlider.setBlockIncrement(1);
+		//		bugSlider.setSnapToTicks(true);
+		Label numBugs = new Label("\nNumber of bugs: " + (int)bugSlider.getValue());
+		bugSlider.valueProperty().addListener(new ChangeListener<Number>() {
+			@Override
+			public void changed(ObservableValue<? extends Number> ov, Number oldValue, Number newValue) {
+				numBugs.setText("\nNumber of bugs: " + newValue.intValue());
+				currentNumBugs = newValue.intValue();
+			}
+		});
+
+		Slider plantSlider = new Slider();
+		plantSlider.setMin(0);
+		plantSlider.setMax(30);
+		plantSlider.setValue(0);
+		plantSlider.setShowTickLabels(true);
+		plantSlider.setShowTickMarks(true);
+		plantSlider.setMajorTickUnit(10);
+		plantSlider.setMinorTickCount(1);
+		plantSlider.setBlockIncrement(1);
+		//		plantSlider.setSnapToTicks(true);
+		Label numPlants = new Label("\nNumber of plants: " + (int)plantSlider.getValue());
+		plantSlider.valueProperty().addListener(new ChangeListener<Number>() {
+			@Override
+			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
+				numPlants.setText("\nNumber of plants: " + newValue.intValue());
+				currentNumPlants = newValue.intValue();
+			}
+		});
+
+		//needs gap here
+		Button generate = new Button("Generate world");
+		generate.setStyle("-fx-background-color: #ffffff;-fx-border-color: #000000");
+		generate.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				reset();
+				addBugs(currentNumBugs, bugPattern);
+				addPlants(currentNumPlants, plantPattern);
+			}
+		});
+
+		menu.getChildren().addAll(title, numBugs, bugSlider, numPlants, plantSlider, generate, controls);
 		menu.setAlignment(Pos.CENTER);
+		menu.setSpacing(15);
 
 		//sets canvas properties and aligns controls
 		canvas = new BorderPane();
-		canvas.setCenter(pane);
+		canvas.setCenter(worldPane);
 		canvas.setLeft(menu);
 
 		//sets button attributes
@@ -155,7 +205,7 @@ public class BugWorldSimulator extends Application {
 			@Override
 			public void handle(final ActionEvent t) {
 				for (Bug b : bugs) {
-					final Bounds bounds = pane.getBoundsInLocal();
+					final Bounds bounds = worldPane.getBoundsInLocal();
 					b.update(bounds, bugs, plants, allObjects);
 				}
 				for (Plant p : plants) {
@@ -191,17 +241,7 @@ public class BugWorldSimulator extends Application {
 		reset.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent arg0) {
-				//clear all groups
-				bugs.clear();
-				plants.clear();
-				allObjects.clear();
-				pane.getChildren().clear();
-				// Create 10 bug objects
-				addBugs(10, bugPattern);
-				// Create 10 plant objects
-				addPlants(10, plantPattern);
-				pane.getChildren().addAll(bugs);
-				pane.getChildren().addAll(plants);
+				reset();
 			}
 		});
 
@@ -210,15 +250,28 @@ public class BugWorldSimulator extends Application {
 		primaryStage.show();
 	}
 
+	public void reset() {
+		bugs.clear();
+		plants.clear();
+		allObjects.clear();
+		worldPane.getChildren().clear();
+		
+		addBugs(currentNumBugs, bugPattern);
+		addPlants(currentNumPlants, plantPattern);
+		worldPane.getChildren().addAll(bugs);
+		worldPane.getChildren().addAll(plants);
+	}
+
 	public void addBugs(int num, ImagePattern bugPattern) {
 		for (int i=0; i<num; i++) {
 			double x = getRandomX();
 			double y = getRandomY();
-			Bug bug = new Bug(x, y, 10);
-			while (bug.checkCollision(x, y, allObjects)) {
+			Bug bug = new Bug(10);
+			while (checkCollision(bug, x, y, allObjects)) {
 				x = getRandomX();
 				y = getRandomY();
 			}
+			bug.relocate(x, y);
 			bug.setFill(bugPattern);
 			bugs.add(bug);
 			allObjects.add(bug);
@@ -227,13 +280,33 @@ public class BugWorldSimulator extends Application {
 
 	public void addPlants(int num, ImagePattern plantPattern) {
 		for (int i=0; i<num; i++) {
-			Plant plant = new Plant(getRandomX(), getRandomY(), getRandomRadius());
+			Plant plant = new Plant(getRandomRadius());
+			double x = getRandomX();
+			double y = getRandomY();
+			while (checkCollision(plant, x, y, allObjects)) {
+				x = getRandomX();
+				y = getRandomY();
+			}
+			plant.relocate(x, y);
 			plant.setFill(plantPattern);
 			plants.add(plant);
 			allObjects.add(plant);
 		}
 	}
-
+	
+//	public boolean checkSpawnCollision(WorldObject w, ArrayList<WorldObject> allObjects) {
+//		boolean collisionDetected = false;
+//		for (WorldObject o : allObjects) {
+//			if (o != w) {
+//				Shape intersect = Shape.intersect(w, o);
+//				if (intersect.getBoundsInLocal().getWidth() != -1) {
+//					collisionDetected = true;
+//				}
+//			}
+//		}
+//		return collisionDetected;
+//	}
+	
 	// Generate radius for plant
 	public double getRandomRadius() {
 		int min = 5;
@@ -242,6 +315,7 @@ public class BugWorldSimulator extends Application {
 		return (Math.random() * range) + min;
 	}
 
+	//Get random X coordinate
 	public double getRandomX() {
 		double min = 10; 
 		double max = defaultWidth-(defaultWidth/3)-30;
@@ -249,11 +323,32 @@ public class BugWorldSimulator extends Application {
 		return (Math.random() * range) + min;
 	}
 
+	//Get random Y coordinate
 	public double getRandomY() {
 		double min = 10;
 		double max = defaultHeight - 30;
 		double range = (max - min);
 		return (Math.random() * range) + min; 
+	}
+	
+	public boolean checkCollision(WorldObject o, double potentialX, double potentialY, ArrayList<WorldObject> allObjects) {
+		for (WorldObject w : allObjects) {
+			if (w != o) {
+				if (this.calculateCollision(o, potentialX, potentialY, w)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public boolean calculateCollision(WorldObject o, double potentialX, double potentialY, WorldObject w) {
+		//inspired by Oliver
+		double diffX = w.getLayoutX() - potentialX;
+		double diffY = w.getLayoutY() - potentialY;
+		double distance = Math.sqrt((diffX*diffX)+(diffY*diffY));
+		double minDistance = w.getRadius() + o.getRadius();
+		return (distance < minDistance);
 	}
 
 	public static void main(final String[] args) {

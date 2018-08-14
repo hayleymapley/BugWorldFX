@@ -55,10 +55,9 @@ public class Bug extends WorldObject {
 	protected int energy = 100;
 	private boolean dead = false;
 
-	public Bug(double centreX, double centreY, double radius) {
+	public Bug(double radius) {
 		super(radius);
 		this.setFill(Color.web("red",0.0));
-		this.relocate(centreX, centreY);
 		this.setRandomDirection();
 
 		int min = 750;
@@ -77,18 +76,18 @@ public class Bug extends WorldObject {
 		return null;
 	}
 
-	//	public boolean checkCollision(ArrayList<WorldObject> allObjects) {
-	//		boolean collisionDetected = false;
-	//		for (WorldObject w : allObjects) {
-	//			if (w != this) {
-	//				Shape intersect = Shape.intersect(this, w);
-	//				if (intersect.getBoundsInLocal().getWidth() != -1) {
-	//					collisionDetected = true;
-	//				}
-	//			}
-	//		}
-	//		return collisionDetected;
-	//	}
+//		public boolean checkCollision(ArrayList<WorldObject> allObjects) {
+//			boolean collisionDetected = false;
+//			for (WorldObject w : allObjects) {
+//				if (w != this) {
+//					Shape intersect = Shape.intersect(this, w);
+//					if (intersect.getBoundsInLocal().getWidth() != -1) {
+//						collisionDetected = true;
+//					}
+//				}
+//			}
+//			return collisionDetected;
+//		}
 
 	public boolean checkCollision(double potentialX, double potentialY, ArrayList<WorldObject> allObjects) {
 		for (WorldObject w : allObjects) {
@@ -123,7 +122,6 @@ public class Bug extends WorldObject {
 
 		//		Movement
 		if (!dead) {
-
 			if (checkCollision(this.getLayoutX() + dX, this.getLayoutY() + dY, allObjects)) {
 				//nothing
 			} else {
@@ -149,16 +147,6 @@ public class Bug extends WorldObject {
 				dY = 0;
 				energy += p.eatFrom();
 			}
-			// 			Colliding with objects
-			//			if (this.checkCollision(allObjects)) {
-			////				dX *= -1;
-			////				dY *= -1;
-			////				this.setRandomDirection();
-			////				this.setLayoutX(this.getLayoutX() - dX);
-			////				this.setLayoutY(this.getLayoutY() - dY);
-			//				
-			//			}
-
 
 			// chance of change in direction and speed (distance moved)
 			int directionChance = (int)Math.ceil(Math.random()*15);

@@ -4,9 +4,8 @@ public class Plant extends WorldObject {
 
 	private int radius;
 
-	public Plant(double x, double y, double radius) {
+	public Plant(double radius) {
 		super(radius);
-		this.relocate(x, y);
 		this.radius = (int) radius;
 	}
 
