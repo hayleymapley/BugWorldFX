@@ -14,6 +14,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -26,14 +27,11 @@ import javafx.scene.layout.BackgroundPosition;
 import javafx.scene.layout.BackgroundRepeat;
 import javafx.scene.layout.BackgroundSize;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
@@ -64,8 +62,12 @@ public class BugWorldSimulator extends Application {
 	private static int defaultHeight = 500;
 
 	private ArrayList<Bug> bugs = new ArrayList<>();
+	private Group bugsGroup = new Group();
 	private ArrayList<Plant> plants = new ArrayList<>();
+	private Group plantsGroup = new Group();
 	private ArrayList<WorldObject> allObjects = new ArrayList<>();
+	private Group worldObjectsGroup = new Group();
+	
 	private int currentNumBugs = 0;
 	private int currentNumPlants = 0;
 
@@ -127,12 +129,16 @@ public class BugWorldSimulator extends Application {
 
 		//Add menu pane
 		VBox menu = new VBox();
-		menu.setStyle("-fx-background-color: #99ffcc");
 		menu.setPrefSize(defaultWidth/2, defaultHeight);
 		menu.setPadding(new Insets(25, 25, 25, 25));
+		BackgroundImage geometric = new BackgroundImage(new Image("/menurotate.jpg"),
+				BackgroundRepeat.REPEAT, BackgroundRepeat.NO_REPEAT, BackgroundPosition.DEFAULT,
+				BackgroundSize.DEFAULT);
+		menu.setBackground(new Background(geometric));
 
 		Text title = new Text("BUG WORLD\n");
 		title.setFont(Font.font(30));
+		title.setFill(Color.WHITE);
 		title.setTextAlignment(TextAlignment.CENTER);
 
 		Slider bugSlider = new Slider();
@@ -146,6 +152,7 @@ public class BugWorldSimulator extends Application {
 		bugSlider.setBlockIncrement(1);
 		//		bugSlider.setSnapToTicks(true);
 		Label numBugs = new Label("\nNumber of bugs: " + (int)bugSlider.getValue());
+		numBugs.setTextFill(Color.WHITE);
 		bugSlider.valueProperty().addListener(new ChangeListener<Number>() {
 			@Override
 			public void changed(ObservableValue<? extends Number> ov, Number oldValue, Number newValue) {
@@ -165,6 +172,7 @@ public class BugWorldSimulator extends Application {
 		plantSlider.setBlockIncrement(1);
 		//		plantSlider.setSnapToTicks(true);
 		Label numPlants = new Label("\nNumber of plants: " + (int)plantSlider.getValue());
+		numPlants.setTextFill(Color.WHITE);
 		plantSlider.valueProperty().addListener(new ChangeListener<Number>() {
 			@Override
 			public void changed(ObservableValue<? extends Number> observable, Number oldValue, Number newValue) {
@@ -187,7 +195,7 @@ public class BugWorldSimulator extends Application {
 
 		menu.getChildren().addAll(title, numBugs, bugSlider, numPlants, plantSlider, generate, controls);
 		menu.setAlignment(Pos.CENTER);
-		menu.setSpacing(15);
+		menu.setSpacing(10);
 
 		//sets canvas properties and aligns controls
 		canvas = new BorderPane();
@@ -247,6 +255,8 @@ public class BugWorldSimulator extends Application {
 
 		primaryStage.setTitle("Bug World");
 		primaryStage.setScene(scene);
+		primaryStage.setMaxWidth(defaultWidth+(defaultWidth/3)+100);
+		primaryStage.setMaxHeight(defaultHeight+125);
 		primaryStage.show();
 	}
 
