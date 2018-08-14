@@ -14,6 +14,8 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
@@ -22,12 +24,17 @@ import javafx.scene.layout.BackgroundPosition;
 import javafx.scene.layout.BackgroundRepeat;
 import javafx.scene.layout.BackgroundSize;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Shape;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 
 // issue: resizing stage does not affect bounds and therefore bug movement
 // solution: declare Bounds (property used by update()) inside KeyFrame handler
@@ -50,9 +57,9 @@ import javafx.scene.shape.Shape;
 public class BugWorldSimulator extends Application {
 
 	private static BorderPane canvas;
-	private static int defaultWidth = 400;
-	private static int defaultHeight = 300;
-	
+	private static int defaultWidth = 600;
+	private static int defaultHeight = 500;
+
 	private ArrayList<Bug> bugs = new ArrayList<>();
 	private ArrayList<Plant> plants = new ArrayList<>();
 	private ArrayList<WorldObject> allObjects = new ArrayList<>();
@@ -62,7 +69,7 @@ public class BugWorldSimulator extends Application {
 		//	Load bug and plant images
 		Image bug = new Image("/beetlecartoon.png");
 		ImagePattern bugPattern = new ImagePattern(bug);
-		
+
 		Image plant = new Image("/bush.png");
 		ImagePattern plantPattern = new ImagePattern(plant);
 
@@ -72,7 +79,7 @@ public class BugWorldSimulator extends Application {
 
 		// Create controls
 		HBox controls = new HBox();
-		controls.setPadding(new Insets(0,5,0,5));
+		controls.setPadding(new Insets(25,25,25,25));
 		controls.setSpacing(5);
 		// Add Play/Pause button		
 		Image imgPlayPause = new Image("/play-pause.png");
@@ -111,7 +118,6 @@ public class BugWorldSimulator extends Application {
 
 		// Add bug pane
 		Pane pane = new Pane();
-//		pane.setStyle("-fx-background-color: #999999");
 		pane.getChildren().addAll(bugs);
 		pane.getChildren().addAll(plants);
 		BackgroundImage grass = new BackgroundImage(new Image("/grasstexture.jpg"),
@@ -119,18 +125,31 @@ public class BugWorldSimulator extends Application {
 				BackgroundSize.DEFAULT);
 		pane.setBackground(new Background(grass));
 
+		//Add menu pane
+		VBox menu = new VBox();
+		menu.setStyle("-fx-background-color: #99ffcc");
+		menu.setPrefSize(defaultWidth/2, defaultHeight);
+		Text title = new Text("BUG WORLD");
+		title.setFont(Font.font(30));
+		title.setTextAlignment(TextAlignment.CENTER);
+		Label numBugs = new Label("Number of bugs");
+		Slider slider = new Slider();
+		slider.setMin(0);
+		slider.setMax(50);
+		menu.getChildren().addAll(title, numBugs, controls);
+		menu.setAlignment(Pos.CENTER);
+
 		//sets canvas properties and aligns controls
 		canvas = new BorderPane();
 		canvas.setCenter(pane);
-		canvas.setBottom(controls);	
+		canvas.setLeft(menu);
 
 		//sets button attributes
 		controls.setAlignment(Pos.CENTER);
-		play.setAlignment(Pos.CENTER);
 
 		//creates scene
-		final Scene scene = new Scene(canvas, defaultWidth, defaultHeight);
-		
+		final Scene scene = new Scene(canvas, defaultWidth+(defaultWidth/3), defaultHeight);
+
 		//creates frame and animation handler
 		KeyFrame frame = new KeyFrame(Duration.millis(30), new EventHandler<ActionEvent>() {
 			@Override
@@ -217,22 +236,22 @@ public class BugWorldSimulator extends Application {
 
 	// Generate radius for plant
 	public double getRandomRadius() {
-		int min = 10;
-		int max = 20;
+		int min = 5;
+		int max = 25;
 		int range = (max-min);
 		return (Math.random() * range) + min;
 	}
 
 	public double getRandomX() {
 		double min = 10; 
-		double max = 380;
+		double max = defaultWidth-(defaultWidth/3)-30;
 		double range = (max - min);
 		return (Math.random() * range) + min;
 	}
 
 	public double getRandomY() {
 		double min = 10;
-		double max = 220;
+		double max = defaultHeight - 30;
 		double range = (max - min);
 		return (Math.random() * range) + min; 
 	}
