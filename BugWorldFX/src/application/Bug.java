@@ -91,7 +91,6 @@ public class Bug extends WorldObject {
 	}
 
 	public void update(Bounds bounds, ArrayList<Bug> bugs, ArrayList<Plant> plants, ArrayList<WorldObject> allObjects) {
-		this.setFill(Color.WHITE);
 		//Energy + death
 		energy--;
 		if (energy == 0) {
@@ -102,10 +101,6 @@ public class Bug extends WorldObject {
 		}
 		if (energy < 0) {
 			energy = 0;
-		}
-		//debugging
-		if (energy%100 == 0) {
-			System.out.println(energy);
 		}
 
 		//Movement
@@ -132,17 +127,14 @@ public class Bug extends WorldObject {
 			//Eating from plants
 			Plant p = this.collisionWithPlantDetected(this.getLayoutX(), this.getLayoutY(), plants);
 			if (p != null && p.getRadius() > 0 && energy < 800) {
-//				dX = 0;
-//				dY = 0;
-				this.setFill(Color.RED);
+				dX = 0;
+				dY = 0;
 				energy += p.eatFrom();
-				System.out.println("eat");
-				System.out.println("---------");
 			}
 
 			// chance of change in direction and speed (distance moved)
 			this.randomiseDirection();
-			p = null;
+//			p = null;
 		}
 	}
 

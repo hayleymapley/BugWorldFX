@@ -48,7 +48,6 @@ import javafx.scene.text.TextAlignment;
 //solution: use .png file
 
 //TODO: add obstacles
-//TODO: fix collision
 //TODO: Comment and tidy up code
 
 public class BugWorldSimulator extends Application {
@@ -64,6 +63,7 @@ public class BugWorldSimulator extends Application {
 
 	private int currentNumBugs = 0;
 	private int currentNumPlants = 0;
+	private int currentNumObstacles = 3;
 
 	//	Load bug and plant images
 	private Image bug = new Image("/beetlecartoon.png");
@@ -71,6 +71,9 @@ public class BugWorldSimulator extends Application {
 
 	private Image plant = new Image("/bush.png");
 	private ImagePattern plantPattern = new ImagePattern(plant);
+	
+	private Image obstacle = new Image("/obstacle.png");
+	private ImagePattern obstaclePattern = new ImagePattern(obstacle); 
 
 	@Override
 	public void start(final Stage primaryStage) {
@@ -133,11 +136,11 @@ public class BugWorldSimulator extends Application {
 		//Add slider for bug input
 		Slider bugSlider = new Slider();
 		bugSlider.setMin(0);
-		bugSlider.setMax(20);
+		bugSlider.setMax(15);
 		bugSlider.setValue(0);
 		bugSlider.setShowTickLabels(true);
 		bugSlider.setShowTickMarks(true);
-		bugSlider.setMajorTickUnit(10);
+		bugSlider.setMajorTickUnit(5);
 		bugSlider.setMinorTickCount(1);
 		bugSlider.setBlockIncrement(1);
 		Label numBugs = new Label("\nNumber of bugs: " + (int)bugSlider.getValue());
@@ -153,11 +156,11 @@ public class BugWorldSimulator extends Application {
 		//Add slider for plant input
 		Slider plantSlider = new Slider();
 		plantSlider.setMin(0);
-		plantSlider.setMax(20);
+		plantSlider.setMax(15);
 		plantSlider.setValue(0);
 		plantSlider.setShowTickLabels(true);
 		plantSlider.setShowTickMarks(true);
-		plantSlider.setMajorTickUnit(10);
+		plantSlider.setMajorTickUnit(5);
 		plantSlider.setMinorTickCount(1);
 		plantSlider.setBlockIncrement(1);
 		Label numPlants = new Label("\nNumber of plants: " + (int)plantSlider.getValue());
@@ -179,6 +182,7 @@ public class BugWorldSimulator extends Application {
 				reset();
 				addBugs(currentNumBugs, bugPattern);
 				addPlants(currentNumPlants, plantPattern);
+				addObstacles(currentNumObstacles, obstaclePattern);
 			}
 		});
 
@@ -258,31 +262,31 @@ public class BugWorldSimulator extends Application {
 
 	//Reset worldPane and add bugs and plants according to fields
 	public void reset() {
+		//Clear everything
 		bugs.clear();
 		plants.clear();
 		allObjects.clear();
 		worldPane.getChildren().clear();
-
+		//Add everything
 		addBugs(currentNumBugs, bugPattern);
 		addPlants(currentNumPlants, plantPattern);
-		worldPane.getChildren().addAll(bugs);
-		worldPane.getChildren().addAll(plants);
+		addObstacles(currentNumObstacles, obstaclePattern);
+		worldPane.getChildren().addAll(allObjects);
 	}
 
 	//Add bugs
 	public void addBugs(int num, ImagePattern bugPattern) {
 		for (int i=0; i<num; i++) {
-			double x = getRandomX();
-			double y = getRandomY();
+			double x = getRandomCoordinate("x");
+			double y = getRandomCoordinate("y");
 			Bug bug = new Bug(10);
 			bug.relocate(x, y);
 			while (checkSpawnCollision(bug, x, y, allObjects)) {
-				x = getRandomX();
-				y = getRandomY();
+				x = getRandomCoordinate("x");
+				y = getRandomCoordinate("y");
 				bug.relocate(x, y);
 			}
-//			bug.setFill(bugPattern);
-			bug.setFill(Color.WHITE);
+			bug.setFill(bugPattern);
 			bugs.add(bug);
 			allObjects.add(bug);
 		}
@@ -292,23 +296,38 @@ public class BugWorldSimulator extends Application {
 	public void addPlants(int num, ImagePattern plantPattern) {
 		for (int i=0; i<num; i++) {
 			Plant plant = new Plant(getRandomRadius());
-			double x = getRandomX();
-			double y = getRandomY();
+			double x = getRandomCoordinate("x");
+			double y = getRandomCoordinate("y");
 			plant.relocate(x, y);
 			while (checkSpawnCollision(plant, x, y, allObjects)) {
-				x = getRandomX();
-				y = getRandomY();
-				
+				x = getRandomCoordinate("x");
+				y = getRandomCoordinate("y");
+				plant.relocate(x, y);
 			}
-			plant.relocate(x, y);
-//			plant.setFill(plantPattern);
-			plant.setFill(Color.BLACK);
+			plant.setFill(plantPattern);
 			plants.add(plant);
 			allObjects.add(plant);
 		}
 	}
+	
+	//Add obstacles
+	public void addObstacles(int num, ImagePattern obstaclePattern) {
+		for (int i=0; i<num; i++) {
+			Obstacle obstacle = new Obstacle(getRandomRadius());
+			double x = getRandomCoordinate("x");
+			double y = getRandomCoordinate("y");
+			obstacle.relocate(x, y);
+			while (checkSpawnCollision(obstacle, x, y, allObjects)) {
+				x = getRandomCoordinate("x");
+				y = getRandomCoordinate("y");
+				obstacle.relocate(x, y);
+			}
+			obstacle.setFill(obstaclePattern);
+			allObjects.add(obstacle);
+		}
+	}
 
-	// Generate radius for plant
+	// Generate radius for plant & obstacle
 	public double getRandomRadius() {
 		int min = 5;
 		int max = 15;
@@ -316,20 +335,24 @@ public class BugWorldSimulator extends Application {
 		return (Math.random() * range) + min;
 	}
 
-	//Get random X coordinate
-	public double getRandomX() {
-		double min = 10; 
-		double max = defaultWidth-(defaultWidth/4);
-		double range = (max - min);
-		return (Math.random() * range) + min;
-	}
-
-	//Get random Y coordinate
-	public double getRandomY() {
-		double min = 10;
-		double max = defaultHeight - 50;
-		double range = (max - min);
-		return (Math.random() * range) + min; 
+	//Get random X or Y coordinate
+	public double getRandomCoordinate(String coord) {
+		double min;
+		double max;
+		double range;		
+		switch (coord) {
+		case "x" :
+			min = 10; 
+			max = defaultWidth-(defaultWidth/4);
+			range = (max - min);
+			return (Math.random() * range) + min;
+		case "y" :
+			min = 10;
+			max = defaultHeight - 50;
+			range = (max - min);
+			return (Math.random() * range) + min; 
+		}
+		return 0;
 	}
 
 	//Check collision for when bugs and plants spawn
@@ -346,7 +369,7 @@ public class BugWorldSimulator extends Application {
 
 	//Used by checkCollision method
 	public boolean calculateCollision(WorldObject o, double potentialX, double potentialY, WorldObject w) {
-		//inspired by Oliver
+		//inspired by Oliver - uses pythagoras' theorum
 		double diffX = w.getLayoutX() - potentialX;
 		double diffY = w.getLayoutY() - potentialY;
 		double distance = Math.sqrt((diffX*diffX)+(diffY*diffY));
