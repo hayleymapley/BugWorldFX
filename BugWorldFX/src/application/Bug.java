@@ -3,10 +3,14 @@ package application;
 import java.util.ArrayList;
 import javafx.geometry.Bounds;
 import javafx.scene.image.Image;
-import javafx.scene.paint.Color;
 import javafx.scene.paint.ImagePattern;
-import javafx.scene.shape.Shape;
 
+/**
+ * Class extending WorldObject that moves (or doesn't move), decreases in energy,
+ * eats from plants, and randomises direction each update.
+ * @author mapleyhayl
+ *
+ */
 public class Bug extends WorldObject {
 
 	private double dX = -1.5f;
@@ -15,26 +19,37 @@ public class Bug extends WorldObject {
 	private boolean isHungry = false;
 	private boolean isDead = false;
 
+	/**
+	 * Constructor
+	 * @param radius
+	 */
 	public Bug(double radius) {
 		super(radius);
 		this.randomiseDirection();
 	}
 	
+	/**
+	 * Method that handles energy decrementing and death, movement and feeding
+	 * @param bounds - for collision detection with walls
+	 * @param bugs - for collision detection
+	 * @param plants - for collision detection and feeding
+	 * @param allObjects - for collision detection
+	 */
 	public void update(Bounds bounds, ArrayList<Bug> bugs, ArrayList<Plant> plants, ArrayList<WorldObject> allObjects) {
-		//Energy + death
 		this.updateEnergy();
 
-		//Movement
 		this.move(bounds, allObjects);
 
-		//Eating from plants
 		this.eat(plants);	
 		
-		// randomise direction (chance of changing direction and distance moved)
 		this.randomiseDirection();
 		}
 	
-
+	/**
+	 * Decrements energy. If energy is less than 600, boolean isHungry is set to true.
+	 * If energy is equal to 0, it remains at 0 and boolean isDead is set to true. The bug
+	 * then changes image to  be a gravestone, indicating death.
+	 */
 	public void updateEnergy() {
 		energy--;
 		if (energy < 600) {
@@ -50,15 +65,19 @@ public class Bug extends WorldObject {
 		}
 	}
 	
+	/**
+	 * Handles bug movement. If the bug is not dead, it will check for collision. If no
+	 * collision will happen when the bug takes its next move, it moves. If collision is
+	 * detected, the bug will go in the opposite direction.
+	 * @param bounds - used for collision with walls.
+	 * @param allObjects - used for collision with worldObjects.
+	 */
 	public void move(Bounds bounds, ArrayList<WorldObject> allObjects) {
 		if (!isDead) {
 			if (!collisionDetected(this.getLayoutX() + dX, this.getLayoutY() + dY, allObjects)) {
-				//move
 				this.setLayoutX(this.getLayoutX() + dX);
 				this.setLayoutY(this.getLayoutY() + dY);
 			}
-			//Border collision logic
-			//inspiration: https://stackoverflow.com/questions/20022889/how-to-make-the-ball-bounce-off-the-walls-in-javafx
 			final boolean atRightBorder = this.getLayoutX() >= (bounds.getMaxX() - this.getRadius());
 			final boolean atLeftBorder = this.getLayoutX() <= (bounds.getMinX() + this.getRadius());
 			final boolean atBottomBorder = this.getLayoutY() >= (bounds.getMaxY() - this.getRadius());
@@ -72,6 +91,12 @@ public class Bug extends WorldObject {
 		}
 	}
 
+	/**
+	 * Handles bug feeding. If collision is detected with a plant and the
+	 * bug is hungry, the bug will stop and eat from the plant, gaining 100
+	 * energy for each feeding action.
+	 * @param plants - to detect collision with plants in the world
+	 */
 	public void eat(ArrayList<Plant> plants) {
 		Plant p = collisionWithPlantDetected(getLayoutX(), getLayoutY(), plants);
 		if (p != null && p.getRadius() > 0 && isHungry) {
@@ -79,10 +104,13 @@ public class Bug extends WorldObject {
 			dY = 0;
 			energy += p.eatFrom();
 		}
-		// set Plant p to null so that the bugs don't continue to eat from it
 		p = null;
 	}
 	
+	/**
+	 * Randomises direction - there is a 1/15 chance of changing direction and 
+	 * a 1/10 chance of increasing "speed" (distance moved per update). This is capped at -3/3.
+	 */
 	public void randomiseDirection() {
 		int directionChance = (int)Math.ceil(Math.random()*15);
 		if (directionChance == 1) {
@@ -108,7 +136,13 @@ public class Bug extends WorldObject {
 		}
 	}
 	
-	//Check for collision with plants
+	/**
+	 * Checks for collision with all plants in the world. If a collision is detected, a plant is returned.
+	 * @param potentialX
+	 * @param potentialY
+	 * @param plants
+	 * @return plant - returned plant is then eaten from.
+	 */
 	public Plant collisionWithPlantDetected(double potentialX, double potentialY, ArrayList<Plant> plants) {
 		for (Plant w : plants) {
 			if (calculatePlantCollision(potentialX, potentialY, w) && w instanceof Plant) {
@@ -118,7 +152,14 @@ public class Bug extends WorldObject {
 		return null;
 	}
 	
-	//Used by collisionWithPlantDetected
+	/**
+	 * Used by the collisionWithPlantDetected method. Takes the potentialX and potentialY of the intended movement
+	 * and calculates whether a collision will occur.
+	 * @param potentialX
+	 * @param potentialY
+	 * @param w
+	 * @return true if there will be a collision or false if there will not
+	 */
 	public boolean calculatePlantCollision(double potentialX, double potentialY, WorldObject w) {
 		//inspired by Oliver
 		double diffX = w.getLayoutX() - potentialX;
@@ -128,7 +169,13 @@ public class Bug extends WorldObject {
 		return (distance < minDistance);
 	}
 
-	//Check for collision
+	/**
+	 * Checks for collision with all WorldObjects. 
+	 * @param potentialX
+	 * @param potentialY
+	 * @param allObjects
+	 * @return true if a collision will occur, and false if not
+	 */
 	public boolean collisionDetected(double potentialX, double potentialY, ArrayList<WorldObject> allObjects) {
 		for (WorldObject w : allObjects) {
 			if (w != this) {
@@ -140,9 +187,15 @@ public class Bug extends WorldObject {
 		return false;
 	}
 
-	//Used by collisionDetected method
+	/**
+	 * Used by collisionDetected method. Takes the potentialX and potentialY of the intended movement
+	 * and calculates whether a collision will occur.
+	 * @param potentialX
+	 * @param potentialY
+	 * @param w
+	 * @return true if a collision will occur, and false if not.
+	 */
 	public boolean calculateCollision(double potentialX, double potentialY, WorldObject w) {
-		//inspired by Oliver
 		double diffX = w.getLayoutX() - potentialX;
 		double diffY = w.getLayoutY() - potentialY;
 		double distance = Math.sqrt((diffX*diffX)+(diffY*diffY));

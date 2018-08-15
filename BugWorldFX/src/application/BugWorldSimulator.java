@@ -34,21 +34,11 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 
-/**issue: resizing stage does not affect bounds and therefore bug movement
- * solution: declare Bounds (property used by update()) inside KeyFrame handler
- * 
- * issue: plants spawn inside each other and bugs move through each other and plants
- * solution: added collision checking methods using pythagoras
- *
- * issue: white circles behind bug objects
- * solution: use .png file
- * 
- * issue: plants can sometimes continue to be eaten when the bug appears out of range (because of circle?)
- * 
+/**
+ * Entry point class - the program must be run from here. Extends Application class.
  * @author mapleyhayl
  *
  */
-
 public class BugWorldSimulator extends Application {
 
 	private static final int DEFAULT_WIDTH = 600;
@@ -109,6 +99,9 @@ public class BugWorldSimulator extends Application {
 	private Slider plantSlider = new Slider();
 	private Label numPlants = new Label("\nNumber of plants: " + (int)plantSlider.getValue());
 
+	/**
+	 * Application initialising method.
+	 */
 	@Override
 	public void start(final Stage primaryStage) {
 
@@ -207,6 +200,9 @@ public class BugWorldSimulator extends Application {
 		primaryStage.show();
 	}
 
+	/**
+	 * Sets control buttons style and images (play/pause, reset, quit)
+	 */
 	public void setControlButtonAttributes() {
 		// Play/pause button
 		// Set image widths and heights (play/pause button has three states/images)
@@ -236,6 +232,9 @@ public class BugWorldSimulator extends Application {
 		reset.setGraphic(resetView);
 	}
 
+	/**
+	 * Initialises the menu pane - adds the controls, titles, and other buttons/sliders
+	 */
 	public void initialiseMenuPane() {
 		// Set controls panel attributes and add buttons
 		controls.setPadding(new Insets(25,25,25,25));
@@ -284,11 +283,17 @@ public class BugWorldSimulator extends Application {
 		menuPane.setSpacing(10);
 	}
 
+	/**
+	 * Sets background of worldPane
+	 */
 	public void setWorldPaneBackground() {
 		worldPane.setBackground(new Background(grass));
 	}
 
-	//Reset worldPane and add bugs and plants according to fields
+	
+	/**
+	 * Resets worldPane and add bugs and plants according to fields
+	 */
 	public void reset() {
 		//Clear everything
 		bugs.clear();
@@ -302,7 +307,11 @@ public class BugWorldSimulator extends Application {
 		worldPane.getChildren().addAll(allObjects);
 	}
 
-	//Add bugs
+	/**
+	 * Adds bugs
+	 * @param num
+	 * @param bugPattern
+	 */
 	public void addBugs(int num, ImagePattern bugPattern) {
 		for (int i=0; i<num; i++) {
 			double x = getRandomCoordinate("x");
@@ -320,7 +329,11 @@ public class BugWorldSimulator extends Application {
 		}
 	}
 
-	//Add plants
+	/**
+	 * Adds plants
+	 * @param num
+	 * @param plantPattern
+	 */
 	public void addPlants(int num, ImagePattern plantPattern) {
 		for (int i=0; i<num; i++) {
 			Plant plant = new Plant(getRandomRadius());
@@ -338,7 +351,11 @@ public class BugWorldSimulator extends Application {
 		}
 	}
 
-	//Add obstacles
+	/**
+	 * Adds obstacles
+	 * @param num
+	 * @param obstaclePattern
+	 */
 	public void addObstacles(int num, ImagePattern obstaclePattern) {
 		for (int i=0; i<num; i++) {
 			Obstacle obstacle = new Obstacle(getRandomRadius());
@@ -355,7 +372,10 @@ public class BugWorldSimulator extends Application {
 		}
 	}
 
-	// Generate radius for plant & obstacle
+	/**
+	 * Generate radius for plant & obstacle
+	 * @return integer (radius)
+	 */
 	public double getRandomRadius() {
 		int min = 5;
 		int max = 15;
@@ -363,7 +383,11 @@ public class BugWorldSimulator extends Application {
 		return (Math.random() * range) + min;
 	}
 
-	//Get random X or Y coordinate
+	/**
+	 * Get random X or Y coordinate
+	 * @param coord
+	 * @return coordinate
+	 */
 	public double getRandomCoordinate(String coord) {
 		double min;
 		double max;
@@ -383,7 +407,14 @@ public class BugWorldSimulator extends Application {
 		return 0;
 	}
 
-	//Check collision for when bugs and plants spawn
+	/**
+	 * Check collision for when bugs and plants spawn
+	 * @param o
+	 * @param potentialX
+	 * @param potentialY
+	 * @param allObjects
+	 * @return true if collision will occur, false if not
+	 */
 	public boolean checkSpawnCollision(WorldObject o, double potentialX, double potentialY, ArrayList<WorldObject> allObjects) {
 		for (WorldObject w : allObjects) {
 			if (w != o) {
@@ -395,7 +426,14 @@ public class BugWorldSimulator extends Application {
 		return false;
 	}
 
-	//Used by checkCollision method
+	/**
+	 * Used by checkCollision method
+	 * @param o
+	 * @param potentialX
+	 * @param potentialY
+	 * @param w
+	 * @return true or false
+	 */
 	public boolean calculateCollision(WorldObject o, double potentialX, double potentialY, WorldObject w) {
 		//inspired by Oliver - uses pythagoras' theorum
 		double diffX = w.getLayoutX() - potentialX;

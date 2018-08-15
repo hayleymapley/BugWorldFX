@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="javadoc">
+    <target name="javadoc">
+        <javadoc access="public" author="true" classpath="C:\Users\mapleyhayl\.eclipse\org.eclipse.platform_4.7.3_1709980481_win32_win32_x86_64\plugins\org.eclipse.fx.ide.css.jfx8_3.0.0.201705220750.jar" destdir="C:\Users\mapleyhayl\git\GuessingGameFX" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" packagenames="application" source="1.8" sourcepath="C:\Users\mapleyhayl\git\GuessingGame\GuessingGameFX\src" splitindex="true" use="true" version="true"/>
+    </target>
+</project>
