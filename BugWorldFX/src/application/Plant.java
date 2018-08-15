@@ -28,7 +28,7 @@ public class Plant extends WorldObject {
 		// Chance of growth
 		int chance = (int)(Math.ceil(Math.random()*70));
 		if (chance == 1 && !checkCollision(allObjects)) { //Stops the plant from growing if it is surrounded by an object
-			radius = radius + 0.5;
+			radius += 1;
 		}
 		if (radius > 30) { //Stop growth at 30
 			radius = 30;

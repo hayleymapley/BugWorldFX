@@ -34,26 +34,30 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 
-// issue: resizing stage does not affect bounds and therefore bug movement
-// solution: declare Bounds (property used by update()) inside KeyFrame handler
-
-//issue: plants spawn inside each other and bugs move through each other and plants
-//solution: added collision checking methods using pythagoras
-
-//issue: plants can sometimes continue to be eaten when the bug appears out of range (because of circle)
-//
-//issue: white circles behind bug objects
-//solution: use .png file
+/**issue: resizing stage does not affect bounds and therefore bug movement
+ * solution: declare Bounds (property used by update()) inside KeyFrame handler
+ * 
+ * issue: plants spawn inside each other and bugs move through each other and plants
+ * solution: added collision checking methods using pythagoras
+ *
+ * issue: white circles behind bug objects
+ * solution: use .png file
+ * 
+ * issue: plants can sometimes continue to be eaten when the bug appears out of range (because of circle?)
+ * 
+ * @author mapleyhayl
+ *
+ */
 
 public class BugWorldSimulator extends Application {
 
+	private static final int DEFAULT_WIDTH = 600;
+	private static final int DEFAULT_HEIGHT = 500;
+	
 	// Panes
 	private BorderPane canvas = new BorderPane();
 	private Pane worldPane = new Pane();
 	private HBox controls = new HBox();
-
-	private static final int DEFAULT_WIDTH = 600;
-	private static final int DEFAULT_HEIGHT = 500;
 
 	// Used to pass information to bugs/plants
 	private ArrayList<Bug> bugs = new ArrayList<>();
