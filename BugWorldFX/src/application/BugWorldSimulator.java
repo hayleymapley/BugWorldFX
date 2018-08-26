@@ -35,7 +35,7 @@ import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 
 /**
- * Entry point class - the program must be run from here. Extends Application class.
+ * Entry point class - the program must be run from here. Extends Application class. 
  * @author mapleyhayl
  *
  */
